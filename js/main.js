@@ -8,7 +8,10 @@ const app = new Vue({
         filtered: [],
         imgCatalog: 'https://via.placeholder.com/200x150',
         userSearch: '',
-        show: false
+        showCart: false,
+        cartUrl: '/getBasket.json',
+        cartItems: [],
+        imgCart: 'https://via.placeholder.com/100x100',
     },
     methods: {
         filter() {
@@ -22,23 +25,52 @@ const app = new Vue({
                     console.log(error);
                 })
         },
-        addProduct(product) {
-            console.log(product.id_product);
+        addProduct(item) {
+            this.getJson(`${API}/addToBasket.json`)
+                .then(data => {
+                    if (data.result === 1) {
+                        let find = this.cartItems.find(el => el.id_product === item.id_product);
+                        if (find) {
+                            find.quantity++;
+                        } else {
+                            this.$set(item, 'quantity', 1);
+                            this.cartItems.push(item)
+                        }
+                    }
+                })
+        },
+        remove(item) {
+            this.getJson(`${API}/deleteFromBasket.json`)
+                .then(data => {
+                    if (data.result === 1) {
+                        if (item.quantity > 1) {
+                            item.quantity--;
+                        } else {
+                            this.cartItems.splice(this.cartItems.indexOf(item), 1);
+                        }
+                    }
+                })
         }
     },
     mounted() {
+        this.getJson(`${API + this.cartUrl}`)
+            .then(data => {
+                for (let item of data.contents) {
+                    this.cartItems.push(item);
+                }
+            })
         this.getJson(`${API + this.catalogUrl}`)
             .then(data => {
-                for (let el of data) {
-                    this.products.push(el);
-                    this.filtered.push(el);
+                for (let item of data) {
+                    this.products.push(item);
+                    this.filtered.push(item);
                 }
             });
         this.getJson(`getProducts.json`)
             .then(data => {
-                for (let el of data) {
-                    this.products.push(el);
-                    this.filtered.push(el);
+                for (let item of data) {
+                    this.products.push(item);
+                    this.filtered.push(item);
                 }
             });
     }
